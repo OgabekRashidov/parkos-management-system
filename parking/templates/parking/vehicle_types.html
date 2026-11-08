@@ -1,0 +1,152 @@
+{% extends "parking/base.html" %}
+{% block title %}Transport turlari — ParkOS{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <div>
+    <div class="page-subhead">Sozlamalar</div>
+    <h1>Transport turlari</h1>
+  </div>
+</div>
+
+<!-- Mavjud turlar jadvali -->
+<div class="card fade-up">
+  <div class="card-title">Mavjud turlar</div>
+  {% if types %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tur nomi</th>
+          <th>Narx (so'm/soat)</th>
+          <th>Amallar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in types %}
+        <tr>
+          <td style="color:var(--muted)">{{ forloop.counter }}</td>
+          <td>
+            <span class="badge {% if 'Yuk' in t.name %}truck{% elif 'Moto' in t.name or 'moto' in t.name %}moto{% else %}car{% endif %}">
+              {{ t.name }}
+            </span>
+          </td>
+          <td style="font-weight:600;color:var(--accent2)">{{ t.price|floatformat:0 }} so'm</td>
+          <td style="display:flex;gap:8px">
+            <button class="tbl-btn edit"
+              onclick="openEditModal({{ t.pk }}, '{{ t.name|escapejs }}', {{ t.price }})">
+              ✏ Tahrirlash
+            </button>
+            <button class="tbl-btn"
+              onclick="openDeleteModal({{ t.pk }}, '{{ t.name|escapejs }}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:middle;display:inline-block;margin-right:3px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> O'chirish
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M5 17H3a2 2 0 0 1-2-2v-4l2.5-5h13L19 11v4a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="14.5" cy="17.5" r="2.5"/></svg></span>
+    Hali hech qanday tur qo'shilmagan
+  </div>
+  {% endif %}
+</div>
+
+<!-- Yangi tur qo'shish -->
+<div class="card fade-up">
+  <div class="card-title">Yangi tur qo'shish</div>
+  <form method="post" action="{% url 'add_vehicle_type' %}">
+    {% csrf_token %}
+    <div class="cols" style="grid-template-columns:1fr 180px auto;gap:12px;align-items:flex-end">
+      <div class="field" style="margin-bottom:0">
+        <label>Tur nomi</label>
+        <input type="text" name="name" placeholder="Masalan: Avtobus" required minlength="2">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Narx (so'm/soat)</label>
+        <input type="number" name="price" placeholder="0" min="1" required>
+      </div>
+      <button class="btn btn-primary" type="submit" style="margin-bottom:0">+ Qo'shish</button>
+    </div>
+  </form>
+</div>
+
+<!-- Yashirin formalar -->
+<form id="edit-form" method="post" style="display:none">
+  {% csrf_token %}
+  <input type="text" name="name" id="edit-name">
+  <input type="number" name="price" id="edit-price">
+</form>
+<form id="delete-form" method="post" style="display:none">
+  {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openEditModal(pk, name, price){
+  document.getElementById('modal-root').innerHTML = `
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>Turni tahrirlash</h3>
+        <div class="field">
+          <label>Tur nomi</label>
+          <input type="text" id="m-name" value="${name}"
+            style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;
+            outline:none;" oninput="">
+        </div>
+        <div class="field">
+          <label>Narx (so'm/soat)</label>
+          <input type="number" id="m-price" value="${price}" min="1"
+            style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);
+            border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;
+            outline:none;">
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Bekor</button>
+          <button class="btn btn-primary" onclick="submitEdit(${pk})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:middle;display:inline-block;margin-right:3px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Saqlash</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function submitEdit(pk){
+  const name  = document.getElementById('m-name').value.trim();
+  const price = document.getElementById('m-price').value;
+  if(!name || !price){ alert("Barcha maydonlarni to'ldiring!"); return; }
+  const form  = document.getElementById('edit-form');
+  form.action = '/types/' + pk + '/edit/';
+  document.getElementById('edit-name').value  = name;
+  document.getElementById('edit-price').value = price;
+  form.submit();
+}
+
+function openDeleteModal(pk, name){
+  document.getElementById('modal-root').innerHTML = `
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>Turni o'chirish</h3>
+        <div class="warn-box">
+          <strong>"${name}"</strong> turini o'chirmoqchimisiz?<br>
+          Bu tur hech qanday avtomobilga biriktirilmagan bo'lishi kerak.
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Bekor</button>
+          <button class="btn btn-danger" onclick="submitDelete(${pk})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:middle;display:inline-block;margin-right:3px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> O'chirish</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function submitDelete(pk){
+  const form = document.getElementById('delete-form');
+  form.action = '/types/' + pk + '/delete/';
+  form.submit();
+}
+</script>
+{% endblock %}

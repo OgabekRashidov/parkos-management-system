@@ -1,0 +1,100 @@
+{% extends "parking/base.html" %}
+{% block title %}Hisobot — ParkOS{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <div>
+    <div class="page-subhead">Moliya</div>
+    <h1>Hisobot</h1>
+  </div>
+</div>
+
+<!-- Moliyaviy kartalar -->
+<div class="stats-grid fade-up">
+  <div class="stat-card green">
+    <div class="stat-label">Jami kirim</div>
+    <div class="stat-value green" style="font-size:18px">{{ finance.total_income|floatformat:0 }}</div>
+    <div class="stat-sub">so'm</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-label">Jami xarajat</div>
+    <div class="stat-value red" style="font-size:18px">{{ finance.total_expense|floatformat:0 }}</div>
+    <div class="stat-sub">so'm</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Balans</div>
+    <div class="stat-value accent" style="font-size:18px">{{ finance.balance|floatformat:0 }}</div>
+    <div class="stat-sub">so'm</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Bugungi kirim</div>
+    <div class="stat-value amber" style="font-size:18px">{{ finance.daily_income|floatformat:0 }}</div>
+    <div class="stat-sub">so'm · {{ finance.daily_date }}</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-label">Hozir ichkarida</div>
+    <div class="stat-value blue">{{ occupied_cnt }} / {{ total_spots }}</div>
+    <div class="stat-sub">{{ free_spots }} bo'sh joy</div>
+  </div>
+</div>
+
+<div class="cols" style="grid-template-columns:1fr 1fr;gap:16px">
+
+  <!-- Xarajat kiritish -->
+  <div class="card fade-up">
+    <div class="card-title">Xarajat kiritish</div>
+    <form method="post" action="{% url 'add_expense' %}">
+      {% csrf_token %}
+      <div class="field">
+        <label>Miqdor (so'm)</label>
+        <input type="number" name="amount" placeholder="0" min="1" required>
+      </div>
+      <button class="btn btn-danger btn-full" type="submit">💸 Xarajat kiritish</button>
+    </form>
+  </div>
+
+  <!-- Kassani nollash -->
+  <div class="card fade-up">
+    <div class="card-title">Xavfli zona</div>
+    <div class="warn-box">
+      <strong>Diqqat!</strong> Kassani nollash barcha kirim va xarajatlarni o'chiradi.
+      Bu amal ortga qaytarib bo'lmaydi.
+    </div>
+    <button class="btn btn-danger btn-full" onclick="showResetModal()">
+      ↺ Kassani nollash
+    </button>
+  </div>
+
+</div>
+
+<!-- Reset modali -->
+<form id="reset-form" method="post" action="{% url 'reset_finance' %}" style="display:none">
+  {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showResetModal(){
+  document.getElementById('modal-root').innerHTML = `
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>Kassani nollash</h3>
+        <div class="warn-box">
+          Hozirgi balans: <strong style="color:var(--accent2)">{{ finance.balance|floatformat:0 }} so'm</strong><br>
+          Bu amalni ortga qaytarib bo'lmaydi!
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">
+          Davom etish uchun "Tasdiqlash" tugmasini bosing.
+        </p>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Bekor qilish</button>
+          <button class="btn btn-danger" onclick="document.getElementById('reset-form').submit()">
+            Tasdiqlash
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+</script>
+{% endblock %}

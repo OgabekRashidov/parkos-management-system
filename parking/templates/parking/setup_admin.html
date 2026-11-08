@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkOS — Admin sozlash</title>
+<link rel="stylesheet" href="{% static 'parking/style.css' %}">
+<style>
+body{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(245,158,11,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,99,255,0.12) 0%, transparent 70%),
+    var(--bg);
+}
+
+.setup-wrap{
+  width:460px;
+  animation:fadeUp .65s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Step badge ── */
+.step-badge{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:1.5rem;justify-content:center;
+}
+.step{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;
+}
+.step.done{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);}
+.step.active{background:rgba(108,99,255,0.2);color:var(--accent2);border:1px solid rgba(108,99,255,0.4);}
+.step.todo{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.step-line{flex:1;height:1px;background:var(--border);max-width:40px;}
+
+/* ── Card ── */
+.setup-card{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:24px;padding:2.5rem;
+  position:relative;overflow:hidden;
+}
+.setup-card::before{
+  content:'';position:absolute;top:-80px;right:-40px;
+  width:220px;height:220px;
+  background:radial-gradient(circle,rgba(245,158,11,0.12),transparent 70%);
+  pointer-events:none;
+}
+
+.shield-icon{
+  width:68px;height:68px;border-radius:20px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.25rem;font-size:30px;
+  box-shadow:0 8px 32px rgba(245,158,11,0.3);
+}
+
+.setup-card h2{
+  font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+  text-align:center;margin-bottom:6px;letter-spacing:-0.3px;
+}
+.setup-card > p{
+  color:var(--muted);font-size:13px;text-align:center;margin-bottom:1.75rem;
+}
+
+/* ── Notice box ── */
+.notice{
+  display:flex;align-items:flex-start;gap:10px;
+  background:rgba(245,158,11,0.08);
+  border:1px solid rgba(245,158,11,0.2);
+  border-radius:12px;padding:12px 14px;
+  margin-bottom:1.5rem;
+  font-size:12.5px;color:#fcd34d;
+  text-align:left;
+}
+.notice-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+
+/* ── Form fields ── */
+.field-wrap{margin-bottom:12px;text-align:left;}
+.field-label{
+  display:block;font-size:11px;font-weight:600;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:5px;padding-left:2px;
+}
+.setup-field{
+  width:100%;padding:12px 16px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;color:var(--text);font-size:15px;
+  font-family:'DM Sans',sans-serif;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.setup-field:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.12);}
+.setup-field::placeholder{color:var(--muted);}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Password strength ── */
+.strength-row{display:flex;gap:4px;margin-top:6px;}
+.strength-seg{
+  flex:1;height:3px;border-radius:2px;
+  background:var(--bg3);transition:background .3s;
+}
+
+/* ── Error ── */
+.setup-err{
+  background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);
+  color:#fca5a5;font-size:13px;padding:10px 14px;border-radius:10px;
+  margin-bottom:14px;text-align:left;display:flex;gap:8px;align-items:flex-start;
+}
+
+/* ── Submit button ── */
+.setup-btn{
+  width:100%;padding:13px;margin-top:4px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  border:none;border-radius:12px;
+  color:#0a0a0f;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:opacity .2s,transform .15s;
+  letter-spacing:0.2px;
+}
+.setup-btn:hover{opacity:.9;transform:translateY(-1px);}
+.setup-btn:active{transform:scale(.98);}
+
+/* ── Footer note ── */
+.setup-footer{
+  margin-top:1.25rem;text-align:center;
+  font-size:12px;color:var(--muted);line-height:1.6;
+}
+.setup-footer code{
+  background:var(--bg3);padding:2px 7px;border-radius:5px;
+  font-family:monospace;color:var(--accent2);font-size:11px;
+}
+</style>
+</head>
+<body>
+<div class="setup-wrap">
+
+  <!-- Step indicator -->
+  <div class="step-badge">
+    <div class="step done">✓</div>
+    <div class="step-line"></div>
+    <div class="step active">2</div>
+    <div class="step-line"></div>
+    <div class="step todo">3</div>
+  </div>
+
+  <div class="setup-card">
+    <div class="shield-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px;"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7L12 2z"/><path d="m9 12 2 2 4-4"/></svg></div>
+    <h2>Admin hisob yaratish</h2>
+    <p>Bu sahifa faqat bir marta ko'rinadi — birinchi admin o'rnatilganda</p>
+
+    <div class="notice">
+      <span class="notice-icon">⚠</span>
+      <span>
+        Bu hisob Django admin paneli (<code>/admin/</code>) va barcha
+        operatorlarga to'liq kirish huquqini beradi. Kuchli parol tanlang.
+      </span>
+    </div>
+
+    {% if error %}
+    <div class="setup-err">
+      <span>⛔</span><span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+
+      <div class="field-wrap">
+        <label class="field-label" for="id_username">Foydalanuvchi nomi</label>
+        <input class="setup-field" type="text" id="id_username"
+               name="username" placeholder="masalan: admin"
+               value="{{ request.POST.username|default:defaults.username }}"
+               autofocus autocomplete="off" required>
+      </div>
+
+      <div class="form-row">
+        <div class="field-wrap">
+          <label class="field-label" for="id_fn">Ism</label>
+          <input class="setup-field" type="text" id="id_fn"
+                 name="first_name" placeholder="Ism"
+                 value="{{ request.POST.first_name|default:'' }}">
+        </div>
+        <div class="field-wrap">
+          <label class="field-label" for="id_ln">Familiya</label>
+          <input class="setup-field" type="text" id="id_ln"
+                 name="last_name" placeholder="Familiya"
+                 value="{{ request.POST.last_name|default:'' }}">
+        </div>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label" for="id_p1">Parol</label>
+        <input class="setup-field" type="password" id="id_p1"
+               name="password1" placeholder="Kamida 4 ta belgi" value="{{ defaults.password1 }}"
+               autocomplete="new-password" required>
+        <div class="strength-row">
+          <div class="strength-seg" id="s1"></div>
+          <div class="strength-seg" id="s2"></div>
+          <div class="strength-seg" id="s3"></div>
+          <div class="strength-seg" id="s4"></div>
+        </div>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label" for="id_p2">Parolni tasdiqlang</label>
+        <input class="setup-field" type="password" id="id_p2"
+               name="password2" placeholder="••••••••" value="{{ defaults.password2 }}"
+               autocomplete="new-password" required>
+      </div>
+
+      <!-- ── Maxfiy savol bo'limi ── -->
+      <div style="margin:20px 0 4px;border-top:1px solid var(--border);padding-top:18px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <div style="width:32px;height:32px;border-radius:9px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);">Parolni tiklash uchun maxfiy savol</div>
+            <div style="font-size:11px;color:var(--muted);">Parolni unutib qo'ysangiz bu savol orqali tiklanadi</div>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <label class="field-label" for="id_sq_choice">Maxfiy savol</label>
+          <select class="setup-field" id="id_sq_choice" name="sq_choice" onchange="toggleCustomQ(this.value)" required>
+            <option value="" disabled selected>— Savol tanlang —</option>
+            {% for q in preset_questions %}
+            <option value="{{ q }}">{{ q }}</option>
+            {% endfor %}
+            <option value="__custom__">✏ O'z savolimni yozaman...</option>
+          </select>
+        </div>
+
+        <div class="field-wrap" id="custom-q-wrap" style="display:none;">
+          <label class="field-label" for="id_sq_custom">O'z savolingiz</label>
+          <input class="setup-field" type="text" id="id_sq_custom"
+                 name="sq_custom" placeholder="Masalan: Birinchi do'stingiz ismi?"
+                 autocomplete="off">
+        </div>
+
+        <div class="field-wrap">
+          <label class="field-label" for="id_sq_answer">Javob</label>
+          <input class="setup-field" type="text" id="id_sq_answer"
+                 name="sq_answer" placeholder="Javobingiz (kichik-katta harf farq qilmaydi)"
+                 autocomplete="off" required>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;padding-left:2px;">
+            Javob xavfsiz saqlanadi — hech kim o'qiy olmaydi
+          </div>
+        </div>
+      </div>
+
+      <button class="setup-btn" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;display:inline-block;margin-right:5px;"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7L12 2z"/><path d="m9 12 2 2 4-4"/></svg> Admin hisobini yaratish</button>
+    </form>
+
+    <p class="setup-footer">
+      Yaratilgandan so'ng admin panelga
+      <code>/admin/</code> orqali kirishingiz mumkin
+    </p>
+  </div>
+</div>
+
+<script>
+const p1 = document.getElementById('id_p1');
+const segs = [document.getElementById('s1'), document.getElementById('s2'),
+              document.getElementById('s3'), document.getElementById('s4')];
+const colors = {1:'#ef4444', 2:'#f59e0b', 3:'#22c55e', 4:'#6c63ff'};
+
+p1.addEventListener('input', () => {
+  const v = p1.value;
+  let score = 0;
+  if (v.length >= 8) score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  segs.forEach((seg, i) => {
+    seg.style.background = i < score ? (colors[score] || '#ef4444') : 'var(--bg3)';
+  });
+});
+
+function toggleCustomQ(val) {
+  const wrap = document.getElementById('custom-q-wrap');
+  const inp  = document.getElementById('id_sq_custom');
+  const show = val === '__custom__';
+  wrap.style.display = show ? 'block' : 'none';
+  inp.required = show;
+}
+</script>
+</body>
+</html>

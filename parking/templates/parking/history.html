@@ -1,0 +1,60 @@
+{% extends "parking/base.html" %}
+{% block title %}Tarix — ParkOS{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <div>
+    <div class="page-subhead">Tarix</div>
+    <h1>Chiqib ketganlar tarixi</h1>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'export_history' %}" class="btn btn-success">
+      ⬇ CSV yuklab olish
+    </a>
+  </div>
+</div>
+
+<div class="card fade-up">
+  {% if records %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Raqam</th>
+          <th>Turi</th>
+          <th>Kirgan vaqt</th>
+          <th>Chiqqan vaqt</th>
+          <th>Soat</th>
+          <th>To'lov</th>
+          <th>Sana</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td style="color:var(--muted)">{{ forloop.counter }}</td>
+          <td><span style="font-weight:600;letter-spacing:.5px">{{ r.plate }}</span></td>
+          <td>
+            <span class="badge {% if 'Yuk' in r.vehicle_type %}truck{% elif 'Moto' in r.vehicle_type or 'moto' in r.vehicle_type %}moto{% else %}car{% endif %}">
+              {{ r.vehicle_type }}
+            </span>
+          </td>
+          <td style="color:var(--muted)">{{ r.enter_time|date:"d.m.Y H:i" }}</td>
+          <td style="color:var(--muted)">{{ r.exit_time|date:"d.m.Y H:i" }}</td>
+          <td style="color:var(--muted)">{{ r.hours }}</td>
+          <td style="font-weight:600;color:var(--green)">{{ r.price|floatformat:0 }} so'm</td>
+          <td style="color:var(--muted)">{{ r.date|date:"d.m.Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="icon">📜</span>
+    Tarix bo'sh
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

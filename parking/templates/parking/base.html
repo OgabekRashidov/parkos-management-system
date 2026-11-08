@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkOS — {% block title %}Avtoturargoh{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'parking/style.css' %}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ══ IMPERSONATSIYA BANNERI ══ -->
+{% if request.session.impersonator_id %}
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(90deg,#f59e0b,#fbbf24);
+  color:#1a1a1a;font-size:13px;font-weight:600;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 20px;box-shadow:0 2px 12px rgba(245,158,11,0.4);">
+  <span>⚠ Siz hozir <strong>{{ request.user.username }}</strong> sifatida ishlayapsiz (admin rejimi)</span>
+  <form method="post" action="{% url 'restore_user' %}" style="margin:0;">
+    {% csrf_token %}
+    <button type="submit" style="background:rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.2);
+      color:#1a1a1a;font-size:12px;font-weight:700;padding:4px 14px;border-radius:7px;cursor:pointer;">
+      ← Admin panelga qaytish
+    </button>
+  </form>
+</div>
+<div style="height:38px;"></div>
+{% endif %}
+
+<!-- ══ TOAST XABARLARI ══ -->
+<div id="msg-area">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if message.tags == 'error' %}error{% else %}success{% endif %} auto-toast">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;"><rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" opacity="0.2"/><path d="M9 17V7h4.5a3.5 3.5 0 0 1 0 7H9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <span>ParkOS</span>
+  </div>
+
+  <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard
+  </a>
+  <a href="{% url 'history' %}" class="nav-item {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></span>Tarix
+  </a>
+  <a href="{% url 'report' %}" class="nav-item {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
+    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>Hisobot
+  </a>
+  <a href="{% url 'vehicle_types' %}" class="nav-item {% if 'vehicle_types' in request.resolver_match.url_name %}active{% endif %}">
+    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M5 17H3a2 2 0 0 1-2-2v-4l2.5-5h13L19 11v4a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="14.5" cy="17.5" r="2.5"/></svg></span>Transport turlari
+  </a>
+
+  <div class="sidebar-divider"></div>
+
+  <form method="post" action="{% url 'logout' %}" style="margin:0;">
+    {% csrf_token %}
+    <button type="submit" class="nav-item danger-item" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Chiqish
+    </button>
+  </form>
+
+  <div class="sidebar-bottom">
+    <div class="clock-badge">
+      <span class="time" id="clock">--:--:--</span>
+      <span id="date-label" style="font-size:11px"></span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ ASOSIY KONTENT ══ -->
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+
+<div id="modal-root"></div>
+
+<script>
+function updateClock(){
+  const now = new Date();
+  const el = document.getElementById('clock');
+  const dl = document.getElementById('date-label');
+  if(el) el.textContent = now.toLocaleTimeString('uz-UZ');
+  if(dl) dl.textContent = now.toLocaleDateString('uz-UZ',{weekday:'short',day:'2-digit',month:'short'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Xabarlarni avtomatik yopish
+document.querySelectorAll('.auto-toast').forEach(t => {
+  setTimeout(() => { t.style.opacity = '0'; }, 3500);
+  setTimeout(() => { t.remove(); }, 3900);
+});
+
+function showMsg(txt, type='success'){
+  const a = document.getElementById('msg-area');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = txt;
+  a.appendChild(t);
+  setTimeout(() => t.style.opacity='0', 3500);
+  setTimeout(() => t.remove(), 3900);
+}
+
+function closeModal(){
+  document.getElementById('modal-root').innerHTML = '';
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

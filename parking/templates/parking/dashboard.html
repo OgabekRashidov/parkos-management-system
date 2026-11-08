@@ -1,0 +1,246 @@
+{% extends "parking/base.html" %}
+{% block title %}Dashboard — ParkOS{% endblock %}
+
+{% block content %}
+<!-- ══ SARLAVHA ══ -->
+<div class="page-header fade-up">
+  <div>
+    <div class="page-subhead">Dashboard</div>
+    <h1>Boshqaruv paneli</h1>
+  </div>
+</div>
+
+<!-- ══ STATISTIKA KARTALAR ══ -->
+{% with occ=occupied_cnt total=total_spots free=free_spots %}
+{% widthratio occ total 100 as pct_raw %}
+<div class="stats-grid">
+  <!-- Bandlik halqasi -->
+  <div class="stat-card accent fade-up">
+    <div class="stat-label">Bandlik</div>
+    <div class="capacity-wrap">
+      <div class="capacity-ring">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+          <circle cx="28" cy="28" r="22" fill="none" stroke="var(--accent)" stroke-width="5"
+            stroke-dasharray="138.23"
+            stroke-dashoffset="{% widthratio free total 138 %}"
+            stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:center"/>
+        </svg>
+        <div class="pct" style="color:var(--accent2)">{{ pct_raw }}%</div>
+      </div>
+      <div>
+        <div class="stat-value accent" style="font-size:18px">{{ occ }} / {{ total }}</div>
+        <div class="stat-sub">{{ free }} bo'sh joy</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card fade-up">
+    <div class="stat-label">Ichkarida</div>
+    <div class="stat-value">{{ occ }} ta</div>
+  </div>
+
+  <div class="stat-card green fade-up">
+    <div class="stat-label">Kunlik kirim</div>
+    <div class="stat-value green" style="font-size:17px">{{ finance.daily_income|floatformat:0 }} so'm</div>
+  </div>
+
+  <div class="stat-card red fade-up">
+    <div class="stat-label">Jami xarajat</div>
+    <div class="stat-value red" style="font-size:17px">{{ finance.total_expense|floatformat:0 }} so'm</div>
+  </div>
+
+  <div class="stat-card blue fade-up">
+    <div class="stat-label">Balans</div>
+    <div class="stat-value blue" style="font-size:17px">{{ finance.balance|floatformat:0 }} so'm</div>
+  </div>
+</div>
+{% endwith %}
+
+<!-- ══ IKKI USTUNLI TARTIB ══ -->
+<div class="cols">
+
+  <!-- CHAP: Kirish formasi + Sig'im -->
+  <div>
+    <div class="card fade-up">
+      <div class="card-title">Avtomobil kiritish</div>
+      <form method="post" action="{% url 'enter_vehicle' %}">
+        {% csrf_token %}
+        <div class="field">
+          <label>Davlat raqami</label>
+          <input type="text" name="plate" placeholder="01A234BC"
+                 maxlength="10" required
+                 oninput="this.value=this.value.toUpperCase()"
+                 autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Avtomobil turi</label>
+          <select name="vehicle_type" required>
+            <option value="">— Tanlang —</option>
+            {% for t in types %}
+            <option value="{{ t.pk }}">{{ t.name }} — {{ t.price|floatformat:0 }} so'm/soat</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" type="submit">+ Kiritish</button>
+      </form>
+    </div>
+
+    <div class="card fade-up">
+      <div class="card-title">Joylar sig'imi</div>
+      <form method="post" action="{% url 'set_capacity' %}" style="display:flex;gap:8px;align-items:flex-end">
+        {% csrf_token %}
+        <div class="field" style="flex:1;margin-bottom:0">
+          <label>Jami joylar soni</label>
+          <input type="number" name="capacity" value="{{ total_spots }}" min="1">
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-bottom:0">Saqlash</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- O'NG: Jadval -->
+  <div class="card fade-up">
+    <div class="card-header">
+      <div class="card-title">Ichkaridagi avtomobillar</div>
+      <span style="font-size:11px;font-weight:600;background:rgba(108,99,255,0.15);color:var(--accent2);padding:3px 10px;border-radius:20px">
+        {{ occupied_cnt }} ta
+      </span>
+    </div>
+
+    <div class="search-wrap">
+      <input id="search-input" placeholder="Raqam bo'yicha qidirish..."
+             oninput="searchVehicle(this.value)" autocomplete="off">
+      <button class="btn" onclick="clearSearch()" style="padding:9px 12px">✕</button>
+    </div>
+    <div id="search-results"></div>
+
+    <div class="table-wrap" id="vehicles-table">
+      {% if vehicles %}
+      <table>
+        <thead>
+          <tr>
+            <th>Raqam</th>
+            <th>Turi</th>
+            <th>Kirgan vaqt</th>
+            <th>Soat</th>
+            <th>To'lov</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in vehicles %}
+          <tr>
+            <td><span style="font-weight:600;letter-spacing:.5px">{{ v.plate }}</span></td>
+            <td>
+              <span class="badge {% if 'Yuk' in v.vehicle_type.name %}truck{% elif 'Moto' in v.vehicle_type.name or 'moto' in v.vehicle_type.name %}moto{% else %}car{% endif %}">
+                {{ v.vehicle_type.name }}
+              </span>
+            </td>
+            <td style="color:var(--muted)">{{ v.enter_time|date:"d.m.Y H:i" }}</td>
+            <td style="color:var(--muted)">{{ v.hours_parked }} soat</td>
+            <td style="font-weight:600;color:var(--accent2)">{{ v.current_fee|floatformat:0 }} so'm</td>
+            <td>
+              <button class="tbl-btn"
+                onclick="showExitModal('{{ v.plate }}', '{{ v.vehicle_type.name }}', '{{ v.enter_time|date:"d.m.Y H:i" }}', {{ v.hours_parked }}, {{ v.current_fee }})">
+                Chiqarish
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><path d="M5 17H3a2 2 0 0 1-2-2v-4l2.5-5h13L19 11v4a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="14.5" cy="17.5" r="2.5"/></svg></span>
+        Hozir birorta ham avtomobil yo'q
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Chiqarish modali uchun yashirin forma -->
+<form id="exit-form" method="post" style="display:none">
+  {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chiqarish modali
+function showExitModal(plate, vtype, enterTime, hours, price){
+  const pct = Math.min(100, Math.round((hours / 24) * 100));
+  document.getElementById('modal-root').innerHTML = `
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>Chiqarish</h3>
+        <div class="modal-stat"><span class="label">Avtomobil</span>
+          <span class="val" style="font-weight:700;letter-spacing:.5px">${plate}</span></div>
+        <div class="modal-stat"><span class="label">Turi</span>
+          <span class="val">${vtype}</span></div>
+        <div class="modal-stat"><span class="label">Kirgan vaqt</span>
+          <span class="val">${enterTime}</span></div>
+        <div class="modal-stat"><span class="label">Tariflanган soat</span>
+          <span class="val">${hours} soat</span></div>
+        <div class="modal-price">
+          ${Number(price).toLocaleString('uz-UZ')} so'm
+          <small>To'lov miqdori</small>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Bekor</button>
+          <button class="btn btn-primary" onclick="confirmExit('${plate}')">
+            To'lovni qabul qilish
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function confirmExit(plate){
+  const form = document.getElementById('exit-form');
+  form.action = '/exit/' + plate + '/';
+  form.submit();
+}
+
+// AJAX qidiruv
+function searchVehicle(q){
+  const resultsEl = document.getElementById('search-results');
+  const tableEl   = document.getElementById('vehicles-table');
+  if(!q.trim()){
+    resultsEl.innerHTML = '';
+    tableEl.style.display = '';
+    return;
+  }
+  tableEl.style.display = 'none';
+  fetch('/search/?q=' + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      if(!data.results.length){
+        resultsEl.innerHTML = '<div class="empty"><span class="icon" style="display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Topilmadi</div>';
+        return;
+      }
+      let rows = data.results.map(v => `
+        <tr>
+          <td><span style="font-weight:600;letter-spacing:.5px">${v.plate}</span></td>
+          <td>${v.type}</td>
+          <td style="color:var(--muted)">${v.enter}</td>
+          <td style="color:var(--muted)">${v.hours} soat</td>
+          <td style="font-weight:600;color:var(--accent2)">${Number(v.fee).toLocaleString('uz-UZ')} so'm</td>
+          <td><button class="tbl-btn" onclick="showExitModal('${v.plate}','${v.type}','${v.enter}',${v.hours},${v.fee})">Chiqarish</button></td>
+        </tr>`).join('');
+      resultsEl.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Raqam</th><th>Turi</th><th>Kirgan vaqt</th><th>Soat</th><th>To'lov</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+    });
+}
+
+function clearSearch(){
+  document.getElementById('search-input').value = '';
+  searchVehicle('');
+}
+</script>
+{% endblock %}

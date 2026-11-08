@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkOS — Kirish</title>
+<link rel="stylesheet" href="{% static 'parking/style.css' %}">
+<style>
+body{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:
+    radial-gradient(ellipse 70% 50% at 80% 20%, rgba(108,99,255,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(245,158,11,0.07) 0%, transparent 60%),
+    var(--bg);
+}
+.wrap{width:420px;animation:fadeUp .6s cubic-bezier(.22,1,.36,1);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.brand{text-align:center;margin-bottom:2rem;}
+.brand-icon{
+  width:72px;height:72px;border-radius:22px;
+  background:linear-gradient(135deg,var(--accent),#a78bfa);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1rem;font-size:32px;
+  box-shadow:0 12px 40px rgba(108,99,255,0.3);
+}
+.brand h1{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.brand p{color:var(--muted);font-size:13px;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.role-card{
+  background:var(--card);border:2px solid var(--border);
+  border-radius:18px;padding:1.5rem 1rem;text-align:center;
+  cursor:pointer;transition:all .2s;text-decoration:none;color:var(--text);
+  display:block;position:relative;overflow:hidden;
+}
+.role-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;}
+.role-card.operator::before{background:radial-gradient(circle at 50% 0%,rgba(108,99,255,0.15),transparent 70%);}
+.role-card.superuser::before{background:radial-gradient(circle at 50% 0%,rgba(245,158,11,0.15),transparent 70%);}
+.role-card:hover{transform:translateY(-3px);}
+.role-card.operator:hover{border-color:var(--accent);box-shadow:0 8px 32px rgba(108,99,255,0.2);}
+.role-card.superuser:hover{border-color:#f59e0b;box-shadow:0 8px 32px rgba(245,158,11,0.2);}
+.role-card.active.operator{border-color:var(--accent);box-shadow:0 8px 32px rgba(108,99,255,0.25);}
+.role-card.active.superuser{border-color:#f59e0b;box-shadow:0 8px 32px rgba(245,158,11,0.25);}
+.role-icon{font-size:30px;margin-bottom:10px;display:block;}
+.role-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:4px;}
+.role-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.login-panel{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:18px;padding:1.75rem;display:none;
+}
+.login-panel.visible{display:block;animation:fadeUp .35s cubic-bezier(.22,1,.36,1);}
+.panel-title{
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
+  margin-bottom:4px;display:flex;align-items:center;gap:8px;
+}
+.panel-sub{font-size:12px;color:var(--muted);margin-bottom:1.25rem;}
+.login-field{
+  width:100%;padding:12px 16px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;color:var(--text);font-size:15px;
+  font-family:'DM Sans',sans-serif;
+  outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:10px;
+}
+.login-field.op:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.15);}
+.login-field.su:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.12);}
+.login-field::placeholder{color:var(--muted);}
+.login-btn{
+  width:100%;padding:13px;border:none;border-radius:12px;
+  color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:opacity .2s,transform .15s;letter-spacing:0.3px;
+}
+.login-btn.op{background:linear-gradient(135deg,var(--accent),#a78bfa);}
+.login-btn.su{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#0a0a0f;}
+.login-btn:hover{opacity:.9;transform:translateY(-1px);}
+.login-btn:active{transform:scale(.98);}
+.login-err{
+  background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);
+  color:#fca5a5;font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:12px;
+}
+.badge{
+  display:inline-block;font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:20px;letter-spacing:.04em;
+  text-transform:uppercase;vertical-align:middle;margin-left:4px;
+}
+.badge.op{background:rgba(108,99,255,0.15);color:var(--accent2);}
+.badge.su{background:rgba(245,158,11,0.15);color:#fbbf24;}
+.pass-wrap{position:relative;margin-bottom:10px;}
+.pass-wrap .login-field{margin-bottom:0;padding-right:46px;}
+.eye-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;padding:4px;
+  color:var(--muted);transition:color .2s;display:flex;align-items:center;
+}
+.eye-btn:hover{color:var(--text);}
+.eye-btn svg{width:18px;height:18px;display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px;color:white;"><path d="M9 17V7h4.5a3.5 3.5 0 0 1 0 7H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>ParkOS</h1>
+    <p>Avtoturargoh boshqaruv tizimi</p>
+  </div>
+
+  <div class="role-grid">
+    <a class="role-card operator" id="card-op" onclick="selectRole('operator');return false;" href="#">
+      <span class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:30px;height:30px;margin-bottom:10px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+      <div class="role-name">Operator</div>
+      <div class="role-desc">Avtomobil kiritish, chiqarish va monitoring</div>
+    </a>
+    <a class="role-card superuser" id="card-su" onclick="selectRole('superuser');return false;" href="#">
+      <span class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:30px;height:30px;margin-bottom:10px;"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7L12 2z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div class="role-name">Superuser</div>
+      <div class="role-desc">Tizim boshqaruvi va foydalanuvchilar</div>
+    </a>
+  </div>
+
+  <div class="login-panel" id="panel-operator">
+    <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Operator kirish <span class="badge op">Operator</span></div>
+    <div class="panel-sub">Dashboard va avtomobil boshqaruvi</div>
+    {% if error and role == 'operator' %}
+    <div class="login-err">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'login_operator' %}">
+      {% csrf_token %}
+      <input class="login-field op" type="text" name="username"
+             placeholder="Foydalanuvchi nomi" autocomplete="username" required>
+<div class="pass-wrap">
+        <input class="login-field op" type="password" name="password" id="pass-op"
+               placeholder="••••••" autocomplete="current-password" required>
+        <button type="button" class="eye-btn" onclick="togglePass('pass-op', this)" tabindex="-1">
+          <svg id="eye-icon-op" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <button class="login-btn op" type="submit">Kirish</button>
+    </form>
+  </div>
+
+  <div class="login-panel" id="panel-superuser">
+    <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7L12 2z"/><path d="m9 12 2 2 4-4"/></svg> Superuser kirish <span class="badge su">Admin</span></div>
+    <div class="panel-sub">Foydalanuvchilar va tizim sozlamalari</div>
+    {% if error and role == 'superuser' %}
+    <div class="login-err">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'login_superuser' %}">
+      {% csrf_token %}
+      <input class="login-field su" type="text" name="username"
+             placeholder="Admin nomi" autocomplete="username" required>
+<div class="pass-wrap">
+        <input class="login-field su" type="password" name="password" id="pass-su"
+               placeholder="••••••" autocomplete="current-password" required>
+        <button type="button" class="eye-btn" onclick="togglePass('pass-su', this)" tabindex="-1">
+          <svg id="eye-icon-su" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <button class="login-btn su" type="submit">Admin kirish</button>
+      <div style="text-align:center;margin-top:10px;">
+        <a href="{% url 'reset_superuser' %}"
+           style="font-size:12px;color:var(--muted);text-decoration:none;
+                  display:inline-flex;align-items:center;gap:4px;transition:color .2s;"
+           onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+          </svg>
+          Parolni unutdim
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function togglePass(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  btn.querySelector('svg').innerHTML = isText
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
+function selectRole(role) {
+  document.getElementById('card-op').classList.toggle('active', role==='operator');
+  document.getElementById('card-su').classList.toggle('active', role==='superuser');
+  document.getElementById('panel-operator').classList.toggle('visible', role==='operator');
+  document.getElementById('panel-superuser').classList.toggle('visible', role==='superuser');
+  setTimeout(()=>document.querySelector('#panel-'+role+' input').focus(), 50);
+}
+{% if role == 'operator' %}selectRole('operator');{% endif %}
+{% if role == 'superuser' %}selectRole('superuser');{% endif %}
+</script>
+</body>
+</html>
