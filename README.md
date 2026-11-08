@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🅿️ Avtoturargoh — Django Web Versiyasi
 
 ## Ishga tushirish (bir marta)
@@ -51,3 +52,7 @@ Brauzerda oching: **http://127.0.0.1:8000**
 - `/report/` — Moliyaviy hisobot
 - `/types/` — Transport turlarini boshqarish
 - `/admin/` — Django admin panel
+=======
+# parkos-management-system
+ParkOs
+>>>>>>> 38e27fef07d9393f781bb26cabeef0b72760c695
